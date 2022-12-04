@@ -10,3 +10,8 @@ services:
      - CAM_PORT_ALT=8080
     secrets:
     - HU3BOT_DISCORD_TOKEN
+
+# the secret is a discord bot token
+secrets:
+  HU3BOT_DISCORD_TOKEN:
+    external: true
