@@ -1,4 +1,4 @@
-version: "3"
+version: "3.9"
 services:
   hu3bot:
     image:  drak3/hu3bot:latest
