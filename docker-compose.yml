@@ -8,3 +8,5 @@ services:
      - PRINTER_HOST='voron.srv'
      - CAM_PORT_MAIN=8081
      - CAM_PORT_ALT=8080
+    secrets:
+    - HU3BOT_DISCORD_TOKEN
