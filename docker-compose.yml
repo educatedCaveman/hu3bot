@@ -1,0 +1,10 @@
+version: "3.9"
+services:
+  hu3bot:
+    build: .
+    environment:
+     - DISCORD_TOKEN=/run/secrets/HU3BOT_DISCORD_TOKEN
+     - DISCORD_CHANNEL="3d_printing"
+     - PRINTER_HOST='voron.srv'
+     - CAM_PORT_MAIN=8081
+     - CAM_PORT_ALT=8080
