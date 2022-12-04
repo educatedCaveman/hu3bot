@@ -108,5 +108,5 @@ async def on_message(message):
         await snapshot(ctx)
 
 
-
+print(f'discord_token: {DISCORD_TOKEN}')
 bot.run(DISCORD_TOKEN)
