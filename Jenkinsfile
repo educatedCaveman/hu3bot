@@ -13,7 +13,7 @@ pipeline {
     // run every friday at 3AM
     triggers { cron('0 3 * * 5') }
 
-    stages {
+    node {
         def app
 
         // ensure we have the code
