@@ -11,7 +11,7 @@ node {
 
     //triggering periodically so the code is always present
     // run every friday at 3AM
-    triggers { cron('0 3 * * 5') }
+    // triggers { cron('0 3 * * 5') }
 
 
     def app
