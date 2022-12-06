@@ -22,13 +22,22 @@ node {
     }
 
     // build the image, using a different name for dev/master
-    stage('Build DEV image') {
-        when { branch 'dev_test' }
-        app = docker.build("drak3/hu3bot-dev")
-    }
-    stage('Build PRD image') {
-        when { branch 'master' }
-        app = docker.build("drak3/hu3bot")
+    // stage('Build DEV image') {
+    //     when { branch 'dev_test' }
+    //     app = docker.build("drak3/hu3bot-dev")
+    // }
+    // stage('Build PRD image') {
+    //     when { branch 'master' }
+    //     app = docker.build("drak3/hu3bot")
+    // }
+    stage("Build ${env.BRANCH_NAME} image") {
+        if (env.BRANCH_NAME == 'dev_test') {
+            app = docker.build("drak3/hu3bot-dev")
+        }
+
+        if (env.BRANCH_NAME == 'master') {
+            app = docker.build("drak3/hu3bot")
+        }
     }
 
     // stage('Test image') {
