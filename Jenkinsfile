@@ -6,7 +6,7 @@ node {
         WEBHOOK = credentials('JENKINS_DISCORD')
         PORTAINER_DEV_WEBHOOK = credentials('PORTAINER_WEBHOOK_DEV_HU3BOT')
         PORTAINER_PRD_WEBHOOK = credentials('PORTAINER_WEBHOOK_PRD_HU3BOT')
-        DOCKER_CREDENTIALS = credentials('DOCKER_HUB_CREDENTIALS')
+        DOCKER_TOKEN = credentials('DOCKERHUB_ACCESS_TOKEN')
     }
 
     //triggering periodically so the code is always present
@@ -54,7 +54,7 @@ node {
         * First, the incremental build number from Jenkins
         * Second, the 'latest' tag.
         * Pushing multiple tags is cheap, as all the layers are reused. */
-        docker.withRegistry('https://registry.hub.docker.com', "${DOCKER_CREDENTIALS}") {
+        docker.withRegistry('https://registry.hub.docker.com', "${DOCKER_TOKEN}") {
         // docker.withRegistry('https://registry.hub.docker.com') {
             app.push("${env.BUILD_NUMBER}")
             app.push("latest")
