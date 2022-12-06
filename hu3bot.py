@@ -4,6 +4,9 @@ import requests
 import datetime
 import os
 from dotenv import load_dotenv
+# import json
+# import time
+# import threading
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
@@ -11,11 +14,12 @@ DISCORD_CHANNEL = os.getenv('DISCORD_CHANNEL')
 PRINTER_HOST = os.getenv('PRINTER_HOST')
 CAM_PORT_MAIN = os.getenv('CAM_PORT_MAIN')
 CAM_PORT_ALT = os.getenv('CAM_PORT_ALT')
+MOONRAKER_BOT_ID = os.getenv('MOONRAKER_BOT_ID')
 
 
 bot_intents = discord.Intents.default()
 bot_intents.message_content = True
-bot = commands.Bot(command_prefix='!', intents=bot_intents)
+bot = commands.Bot(command_prefix='/', intents=bot_intents)
 
 
 def capture_snapshot(cam='main'):
@@ -77,7 +81,7 @@ async def snapshit(context, cam='main'):
     snapshot : takes a snapshot
     """
     await snapshot(context, cam)
-    await context.send(content="BTW, you should use !snapshot, not !snapshit.")
+    await context.send(content="BTW, you should use /snapshot, not /snapshit.")
 
 
 @bot.command(name='test')
@@ -108,5 +112,47 @@ async def on_message(message):
         await snapshot(ctx)
 
 
+async def print_status(context):
+    URL = "http://192.168.11.10:7125/printer/objects/query?print_stats"
+    response = requests.get(URL)
+    data = response.json()
+    status = data['result']['status']['print_stats']['state']
+    await context.send(content=status)
+
+
+# listen for moonraker bot messages
+@bot.event
+async def on_message(message):
+    if message.author != bot.user \
+            and message.channel.name == DISCORD_CHANNEL \
+            and message.author != MOONRAKER_BOT_ID:
+        context = await bot.get_context(message)
+        await bot.invoke(context)
+        await print_status(context)
+        # msg = f"{message.author} != {MOONRAKER_BOT_ID}"
+        # await message.channel.send(content=msg)
+        # msg = f"author.name: {message.author.name}.  author.id: {message.author.id}"
+        # await message.channel.send(content=msg)
+
+    # context = await bot.get_context(message)
+    # await bot.invoke(context)
+    # await message.channel.send(message.author)
+
+
+# listen for messages from moonraker
+@bot.event
+async def on_message(message):
+    if message.author.id == MOONRAKER_BOT_ID:
+        context = await bot.get_context(message)
+        await bot.invoke(context)
+        await print_status(context)
+
+
 
 bot.run(DISCORD_TOKEN)
+
+
+# t1 = threading.Thread(target=bot.run(DISCORD_TOKEN))  
+# t2 = threading.Thread(target=wait_for_status())  
+# t1.start()
+# t2.start()
