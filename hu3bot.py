@@ -112,6 +112,7 @@ async def on_message(message):
         await snapshot(ctx)
 
 
+
 async def print_status(context):
     URL = "http://192.168.11.10:7125/printer/objects/query?print_stats"
     response = requests.get(URL)
@@ -156,3 +157,4 @@ bot.run(DISCORD_TOKEN)
 # t2 = threading.Thread(target=wait_for_status())  
 # t1.start()
 # t2.start()
+
