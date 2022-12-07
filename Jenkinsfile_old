@@ -66,7 +66,7 @@ pipeline {
         //     steps {
         //         // deploy configs to DEV
         //         echo 'Redeploy DEV stack'
-        //         sh 'http post ${PORTAINER_DEV_WEBHOOK}'
+                // sh 'http post ${PORTAINER_DEV_WEBHOOK}'
         //     }
         // }
 

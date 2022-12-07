@@ -1,9 +1,5 @@
 node {
 
-    //triggering periodically so the code is always present
-    // run every friday at 3AM
-    // triggers { cron('0 3 * * 5') }
-
 
     def app
 
@@ -12,14 +8,18 @@ node {
         checkout scm
     }
 
-    stage("Build ${env.BRANCH_NAME} image") {
-        if (env.BRANCH_NAME == 'dev_test') {
-            app = docker.build("drak3/hu3bot-dev")
-        }
+    // not going to use multi branches for automated deployment
+    // stage("Build ${env.BRANCH_NAME} image") {
+    //     if (env.BRANCH_NAME == 'dev_test') {
+    //         app = docker.build("drak3/hu3bot-dev")
+    //     }
+    //     if (env.BRANCH_NAME == 'master') {
+    //         app = docker.build("drak3/hu3bot")
+    //     }
+    // }
 
-        if (env.BRANCH_NAME == 'master') {
-            app = docker.build("drak3/hu3bot")
-        }
+    stage("Build ${env.BRANCH_NAME} image") {
+        app = docker.build("drak3/hu3bot")
     }
 
     // stage('Test image') {
@@ -41,5 +41,12 @@ node {
             app.push("latest")
         }
     }
+
+    // portainer webhook
+    stage("Deploy") {
+            // sh 'http post ${PORTAINER_PRD_WEBHOOK}'
+            sh 'http post ${PORTAINER_DEV_WEBHOOK}'
+    }
+
 }
 
