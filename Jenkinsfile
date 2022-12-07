@@ -45,7 +45,9 @@ node {
     // portainer webhook
     stage("Deploy") {
             // sh 'http post ${PORTAINER_PRD_WEBHOOK}'
-            sh 'http post ${PORTAINER_DEV_WEBHOOK}'
+            // sh 'http post ${PORTAINER_WEBHOOK_DEV_HU3BOT}'
+        httpRequest httpMode: 'POST'
+                    url: 'PORTAINER_WEBHOOK_DEV_HU3BOT'
     }
 
 }
