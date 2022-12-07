@@ -37,43 +37,9 @@ node {
         * Second, the 'latest' tag.
         * Pushing multiple tags is cheap, as all the layers are reused. */
         docker.withRegistry('https://registry.hub.docker.com', 'DOCKER_HUB_CREDENTIALS') {
-        // docker.withRegistry('https://registry.hub.docker.com') {
             app.push("${env.BUILD_NUMBER}")
             app.push("latest")
         }
     }
-
-    // stage('Notifier') {
-    //     discordSend \
-    //         description: "${JOB_NAME} - build #${BUILD_NUMBER}", \
-    //         // footer: "Footer Text", \
-    //         // link: env.BUILD_URL, \
-    //         result: currentBuild.currentResult, \
-    //         // title: JOB_NAME, \
-    //         webhookURL: 'JENKINS_DISCORD'
-    // }
-    // discordSend \
-    //     description: "${JOB_NAME} - build #${BUILD_NUMBER}", \
-    //     // footer: "Footer Text", \
-    //     // link: env.BUILD_URL, \
-    //     result: currentBuild.currentResult, \
-    //     // title: JOB_NAME, \
-    //     webhookURL: 'JENKINS_DISCORD'
-
-
-    
-
-
-
-    // finally {
-    //     discordSend \
-    //         description: "${JOB_NAME} - build #${BUILD_NUMBER}", \
-    //         // footer: "Footer Text", \
-    //         // link: env.BUILD_URL, \
-    //         result: currentBuild.currentResult, \
-    //         // title: JOB_NAME, \
-    //         webhookURL: 'JENKINS_DISCORD'
-    
-    // }
 }
 
