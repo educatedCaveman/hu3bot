@@ -10,10 +10,10 @@ node {
     //     // DOCKER_LOGIN = credentials('DOCKER_HUB_CREDENTIALS')
     // }
 
-    withEnv([WEBHOOK = credentials('JENKINS_DISCORD'),
-        PORTAINER_DEV_WEBHOOK = credentials('PORTAINER_WEBHOOK_DEV_HU3BOT'),
-        PORTAINER_PRD_WEBHOOK = credentials('PORTAINER_WEBHOOK_PRD_HU3BOT')
-    ])
+    // withEnv([WEBHOOK = credentials('JENKINS_DISCORD'),
+    //     PORTAINER_DEV_WEBHOOK = credentials('PORTAINER_WEBHOOK_DEV_HU3BOT'),
+    //     PORTAINER_PRD_WEBHOOK = credentials('PORTAINER_WEBHOOK_PRD_HU3BOT')
+    // ])
 
     //triggering periodically so the code is always present
     // run every friday at 3AM
@@ -79,7 +79,7 @@ node {
             // link: env.BUILD_URL, \
             result: currentBuild.currentResult, \
             // title: JOB_NAME, \
-            webhookURL: "${WEBHOOK}"
+            webhookURL: 'JENKINS_DISCORD'
     
     }
 }
