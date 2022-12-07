@@ -52,13 +52,13 @@ node {
     //         // title: JOB_NAME, \
     //         webhookURL: 'JENKINS_DISCORD'
     // }
-    discordSend \
-        description: "${JOB_NAME} - build #${BUILD_NUMBER}", \
-        // footer: "Footer Text", \
-        // link: env.BUILD_URL, \
-        result: currentBuild.currentResult, \
-        // title: JOB_NAME, \
-        webhookURL: 'JENKINS_DISCORD'
+    // discordSend \
+    //     description: "${JOB_NAME} - build #${BUILD_NUMBER}", \
+    //     // footer: "Footer Text", \
+    //     // link: env.BUILD_URL, \
+    //     result: currentBuild.currentResult, \
+    //     // title: JOB_NAME, \
+    //     webhookURL: 'JENKINS_DISCORD'
 
 
     
