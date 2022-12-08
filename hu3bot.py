@@ -4,9 +4,7 @@ import requests
 import datetime
 import os
 from dotenv import load_dotenv
-# import json
-# import time
-# import threading
+import math
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
@@ -14,12 +12,25 @@ DISCORD_CHANNEL = os.getenv('DISCORD_CHANNEL')
 PRINTER_HOST = os.getenv('PRINTER_HOST')
 CAM_PORT_MAIN = os.getenv('CAM_PORT_MAIN')
 CAM_PORT_ALT = os.getenv('CAM_PORT_ALT')
-MOONRAKER_BOT_ID = os.getenv('MOONRAKER_BOT_ID')
+MOONRAKER_API_PORT = os.getenv('MOONRAKER_API_PORT')
+# MOONRAKER_BOT_ID = os.getenv('MOONRAKER_BOT_ID')
+WEB_URL = os.getenv('WEB_URL')
 
 
 bot_intents = discord.Intents.default()
 bot_intents.message_content = True
-bot = commands.Bot(command_prefix='/', intents=bot_intents)
+bot = commands.Bot(command_prefix='!', intents=bot_intents)
+
+@bot.event
+async def on_ready():
+    # context.send(f'hu3bot is ready.  context type is {type(context)}')
+    print(f'hu3bot is ready!')
+    print(f'DISCORD_TOKEN: {DISCORD_TOKEN}')
+    print(f'DISCORD_CHANNEL: {DISCORD_CHANNEL}')
+    print(f'PRINTER_HOST: {PRINTER_HOST}')
+    print(f'CAM_PORT_MAIN: {CAM_PORT_MAIN}')
+    print(f'CAM_PORT_ALT: {CAM_PORT_ALT}')
+    print(f'MOONRAKER_BOT_ID: {MOONRAKER_BOT_ID}')
 
 
 def capture_snapshot(cam='main'):
@@ -48,113 +59,137 @@ def capture_snapshot(cam='main'):
     return snapshot
 
 
-@bot.command(name='snapshot')
-async def snapshot(context, cam='main'):
+def to_lower(arg):
+    return arg.lower()
+
+
+@bot.command(name='snapshot', aliases=['snapshit'])
+async def snapshot(context, *, cam:to_lower='main'):
     """
     takes a snapshot
 
     Parameters
     -----------
     cam : str, optional
-        which camera is used (main xor alt)
+        which camera is used (main, alt, or both)
     """
-    snapshot = capture_snapshot(cam)
-    embed = discord.Embed()
-    base_name = snapshot.split('/')[-1]
-    file = discord.File(snapshot, filename=base_name)
-    embed.set_image(url=f"attachment://{base_name}")
-    await context.send(file=file)
+    if cam in ['main', 'alt']:
+        snapshot = capture_snapshot(cam)
+        embed = discord.Embed()
+        base_name = snapshot.split('/')[-1]
+        file = discord.File(snapshot, filename=base_name)
+        embed.set_image(url=f"attachment://{base_name}")
+        await context.send(file=file)
 
+    elif cam == 'both':
+        embeds = []
+        files = []
+        for i in ['main', 'alt']:
+            embed = discord.Embed()
+            snapshot = capture_snapshot(i)
+            base_name = snapshot.split('/')[-1]
+            file = discord.File(snapshot, filename=base_name)
+            files.append(file)
+            embed.set_image(url=f"attachment://{base_name}")
+            embeds.append(embed)
+            # need to sleep so the file names are different
+            await asyncio.sleep(1)
 
-@bot.command(name='snapshit')
-async def snapshit(context, cam='main'):
-    """
-    alias for common typo of !snapshot
+        await context.send(files=files)
 
-    Parameters
-    -----------
-    cam : str, optional
-        which camera is used (main xor alt)
-
-    See Also
-    --------
-    snapshot : takes a snapshot
-    """
-    await snapshot(context, cam)
-    await context.send(content="BTW, you should use /snapshot, not /snapshit.")
+    else:
+        message = f"""unrecognized argument:\t`{cam}`"""
+        await context.send(message)
 
 
 @bot.command(name='test')
-async def snapshit(context):
+async def test(context):
     """
     basic test/debugging command
     """
     await context.send(content="I'm not quite dead yet!  I don't want to go on the cart!")
 
 
-@bot.event
-async def on_message(message):
-    """
-    Listens to all messages on the channel, and will invoke snapshot() when it
-    sees the phrase "Your printer completed printing".  This should really
-    only be seen from the Moonraker completion notification.
 
-    I know this is a bad way to do this, but I've been unable to figure out
-    how to get this bot to listen to !commands from other bots.  This current
-    solution should be sufficient enough given the phrase is long, uncommon, 
-    and it must be posted in a specific channel by a bot.
-    """
-    ctx = await bot.get_context(message)
-    await bot.invoke(ctx)
-    if message.channel.name == DISCORD_CHANNEL \
-            and message.author.bot \
-            and 'Your printer completed printing' in message.content:
-        await snapshot(ctx)
-
-
-
-async def print_status(context):
-    URL = "http://192.168.11.10:7125/printer/objects/query?print_stats"
+def get_from_moonraker(api:str=None):
+    URL = f"http://{PRINTER_HOST}:{MOONRAKER_API_PORT}/{api}"
     response = requests.get(URL)
     data = response.json()
-    status = data['result']['status']['print_stats']['state']
-    await context.send(content=status)
+    return data
 
 
-# listen for moonraker bot messages
-@bot.event
-async def on_message(message):
-    if message.author != bot.user \
-            and message.channel.name == DISCORD_CHANNEL \
-            and message.author != MOONRAKER_BOT_ID:
-        context = await bot.get_context(message)
-        await bot.invoke(context)
-        await print_status(context)
-        # msg = f"{message.author} != {MOONRAKER_BOT_ID}"
-        # await message.channel.send(content=msg)
-        # msg = f"author.name: {message.author.name}.  author.id: {message.author.id}"
-        # await message.channel.send(content=msg)
-
-    # context = await bot.get_context(message)
-    # await bot.invoke(context)
-    # await message.channel.send(message.author)
+def time_fmt(secs:float):
+    hours = str(math.floor(secs / 3600))
+    mins = str(math.floor((secs % 3600) / 60)).zfill(2)
+    return f"{hours}h:{mins}m"
 
 
-# listen for messages from moonraker
-@bot.event
-async def on_message(message):
-    if message.author.id == MOONRAKER_BOT_ID:
-        context = await bot.get_context(message)
-        await bot.invoke(context)
-        await print_status(context)
+@bot.command(name='status')
+async def status(context, *, stus:to_lower=None):
+    # https://moonraker.readthedocs.io/en/latest/web_api/#printer-status
+    # basic print stats
+
+    print_stats_api = 'printer/objects/query?print_stats'
+    print_stats = get_from_moonraker(print_stats_api)['result']['status']['print_stats']
+    state = print_stats['state']
+
+    display_stats_api = 'printer/objects/query?display_status'
+    display_stats = get_from_moonraker(display_stats_api)['result']['status']['display_status']
+    progress = display_stats['progress']
+    prog_pct = round(progress * 100, 1)
+
+    #state is one of: standby, printing, paused, error, complete
+    state_colors = {
+        'printing':     discord.Colour.brand_green(),
+        'complete':     discord.Colour.brand_green(),
+        'standby':      discord.Colour.blue(),
+        'paused':       discord.Colour.yellow(),
+        'error':        discord.Colour.brand_red(),
+    }
+    
+    embed = discord.Embed(
+        title = f"{state.title()}",
+        type = "rich",
+        description = f"{prog_pct}% complete",
+        url = WEB_URL,
+        color = state_colors[state]
+    )
+
+    if stus is None:
+        await context.send(embed=embed)
+
+    elif stus == 'detailed':
+        # filename
+        embed.add_field(name='file', value=print_stats['filename'], inline=False)
+
+        # print time, total time, filament used
+        embed.add_field(name='print time', value=time_fmt(print_stats['print_duration']), inline=True)
+        embed.add_field(name='total time', value=time_fmt(print_stats['total_duration']), inline=True)
+        filament_fmt = f"{round((print_stats['filament_used'] / 1000), 3)} m"
+        embed.add_field(name='filament used', value=filament_fmt, inline=True)
+
+        # estimated totals
+        est_embed = discord.Embed(
+            title = "Estimated Totals:",
+            type = "rich",
+            color = state_colors[state]
+        )
+        est_duration = print_stats['print_duration'] / progress
+        est_total = print_stats['total_duration'] / progress
+        est_filament = f"{round((print_stats['filament_used'] / 1000) / progress, 3)} m"
+        est_embed.add_field(name='print time', value=time_fmt(est_duration), inline=True)
+        est_embed.add_field(name='total time', value=time_fmt(est_total), inline=True)
+        est_embed.add_field(name='filament used', value=est_filament, inline=True)
+
+        await context.send(embeds=[embed, est_embed])
+    
+    else:
+        message = f"""unrecognized argument:\t`{stus}`"""
+        await context.send(message)
 
 
+@bot.command(name='info')
+async def status(context):
+    pass
 
 bot.run(DISCORD_TOKEN)
-
-
-# t1 = threading.Thread(target=bot.run(DISCORD_TOKEN))  
-# t2 = threading.Thread(target=wait_for_status())  
-# t1.start()
-# t2.start()
-
