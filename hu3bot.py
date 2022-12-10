@@ -5,9 +5,38 @@ import datetime
 import os
 from dotenv import load_dotenv
 import math
+import asyncio
+
+# attempt to evaluate secrets either from a .env file or from docker secrets.
+# https://stackoverflow.com/questions/65447044/python-flask-application-access-to-docker-secrets-in-a-swarm/66717793#66717793
+
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path=dotenv_path)
+
+
+def manage_secrets(name):
+    var1 = os.getenv(name)
+    
+    secret_path = f'/run/secrets/{name}'
+    existence = os.path.exists(secret_path)
+    
+    if var1 is not None:
+        return var1
+    
+    if existence:
+        var2 = open(secret_path).read().rstrip('\n')
+        return var2
+    
+    if all([var1 is None, not existence]):
+        return KeyError(f'{name}')
 
 load_dotenv()
-DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
+# DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
+DISCORD_TOKEN = manage_secrets(name='DISCORD_TOKEN')
+
+print(DISCORD_TOKEN)
+
 DISCORD_CHANNEL = os.getenv('DISCORD_CHANNEL')
 PRINTER_HOST = os.getenv('PRINTER_HOST')
 CAM_PORT_MAIN = os.getenv('CAM_PORT_MAIN')
@@ -15,8 +44,6 @@ CAM_PORT_ALT = os.getenv('CAM_PORT_ALT')
 MOONRAKER_API_PORT = os.getenv('MOONRAKER_API_PORT')
 WEB_URL = os.getenv('WEB_URL')
 
-print(type(DISCORD_TOKEN))
-print(DISCORD_TOKEN)
 
 bot_intents = discord.Intents.default()
 bot_intents.message_content = True
@@ -25,11 +52,8 @@ bot = commands.Bot(command_prefix='!', intents=bot_intents)
 @bot.event
 async def on_ready():
     print(f'hu3bot is ready!')
-    print(f'DISCORD_TOKEN: {DISCORD_TOKEN}')
-    print(f'DISCORD_CHANNEL: {DISCORD_CHANNEL}')
-    print(f'PRINTER_HOST: {PRINTER_HOST}')
-    print(f'CAM_PORT_MAIN: {CAM_PORT_MAIN}')
-    print(f'CAM_PORT_ALT: {CAM_PORT_ALT}')
+    # print(DISCORD_TOKEN)
+    #TODO: put a constant check of the printer status here?
 
 
 def capture_snapshot(cam='main'):
@@ -101,12 +125,12 @@ async def snapshot(context, *, cam:to_lower='main'):
         await context.send(message)
 
 
-@bot.command(name='test')
-async def test(context):
-    """
-    basic test/debugging command
-    """
-    await context.send(content="I'm not quite dead yet!  I don't want to go on the cart!")
+# @bot.command(name='test')
+# async def test(context):
+#     """
+#     basic test/debugging command
+#     """
+#     await context.send(content="I'm not quite dead yet!  I don't want to go on the cart!")
 
 
 
@@ -187,8 +211,13 @@ async def status(context, *, stus:to_lower=None):
         await context.send(message)
 
 
+#TODO: reset the stats
+
+
 @bot.command(name='info')
 async def status(context):
     pass
+
+
 
 bot.run(DISCORD_TOKEN)

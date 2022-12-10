@@ -1,0 +1,5 @@
+# test commands
+!test
+!help
+!snapshot both
+!status detailed

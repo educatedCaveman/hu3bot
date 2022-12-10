@@ -4,17 +4,17 @@ services:
     image:  drak3/hu3bot:latest
     environment:
     #  - DISCORD_TOKEN=/run/secrets/HU3BOT_DISCORD_TOKEN
-     - DISCORD_TOKEN=$DISCORD_TOKEN
+    #  - DISCORD_TOKEN=$DISCORD_TOKEN
      - DISCORD_CHANNEL="3d_printing"
      - PRINTER_HOST=voron.srv
      - CAM_PORT_MAIN=8081
      - CAM_PORT_ALT=8080
      - MOONRAKER_API_PORT=7125
      - WEB_URL='https://fluidd.drak3.io'
-#     secrets:
-#     - HU3BOT_DISCORD_TOKEN
+    secrets:
+    - DISCORD_TOKEN
 
-# # the secret is a discord bot token
-# secrets:
-#   HU3BOT_DISCORD_TOKEN:
-#     external: true
+# the secret is a discord bot token
+secrets:
+  DISCORD_TOKEN:
+    external: true
