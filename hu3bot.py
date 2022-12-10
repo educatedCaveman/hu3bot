@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 import math
 import asyncio
+from tabulate import tabulate
 
 # attempt to evaluate secrets either from a .env file or from docker secrets.
 # https://stackoverflow.com/questions/65447044/python-flask-application-access-to-docker-secrets-in-a-swarm/66717793#66717793
@@ -31,12 +32,9 @@ def manage_secrets(name):
     if all([var1 is None, not existence]):
         return KeyError(f'{name}')
 
+
 load_dotenv()
-# DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
-DISCORD_TOKEN = manage_secrets(name='DISCORD_TOKEN')
-
-print(DISCORD_TOKEN)
-
+DISCORD_TOKEN = manage_secrets(name='HU3BOT_DISCORD_TOKEN')
 DISCORD_CHANNEL = os.getenv('DISCORD_CHANNEL')
 PRINTER_HOST = os.getenv('PRINTER_HOST')
 CAM_PORT_MAIN = os.getenv('CAM_PORT_MAIN')
@@ -134,9 +132,35 @@ async def snapshot(context, *, cam:to_lower='main'):
 
 
 
-def get_from_moonraker(api:str=None):
+async def get_from_moonraker(context, api:str=None):
+    #check for nothing being passed:
+    if api is None:
+        return api
+
     URL = f"http://{PRINTER_HOST}:{MOONRAKER_API_PORT}/{api}"
-    response = requests.get(URL)
+
+    try:
+        response = requests.get(URL)
+
+    except requests.exceptions.Timeout as e:
+        msg = """Moonraker timeout. Please investigate:        
+        ```{e}```
+        """
+        await context.send(msg)
+
+    except requests.exceptions.TooManyRedirects as e:
+        msg = """Too many redirects from Moonraker. Please investigate:        
+        ```{e}```
+        """
+        await context.send(msg)
+
+    except requests.exceptions.RequestException as e:
+        msg = """Unkown Moonraker error. Please investigate:        
+        ```{e}```
+        """
+        await context.send(msg)
+
+    # when the request is successful, return the data
     data = response.json()
     return data
 
@@ -153,11 +177,13 @@ async def status(context, *, stus:to_lower=None):
     # basic print stats
 
     print_stats_api = 'printer/objects/query?print_stats'
-    print_stats = get_from_moonraker(print_stats_api)['result']['status']['print_stats']
+    api_resp = await get_from_moonraker(context, print_stats_api)
+    print_stats = api_resp['result']['status']['print_stats']
     state = print_stats['state']
 
     display_stats_api = 'printer/objects/query?display_status'
-    display_stats = get_from_moonraker(display_stats_api)['result']['status']['display_status']
+    api_resp = await get_from_moonraker(context, display_stats_api)
+    display_stats = api_resp['result']['status']['display_status']
     progress = display_stats['progress']
     prog_pct = round(progress * 100, 1)
 
@@ -214,10 +240,121 @@ async def status(context, *, stus:to_lower=None):
 #TODO: reset the stats
 
 
-@bot.command(name='info')
-async def status(context):
-    pass
+def split_lines(line:str, max_len:int):
+    too_long = True
+    new_lines = []
+    tmp_val = line
+    while too_long:
+        # make sure the first character isn't a space:
+        tmp_val = tmp_val.strip()
 
+        # the n-th character happens to be a space
+        if tmp_val[max_len] in (' '):
+            new_lines.append(tmp_val[:max_len])
+            tmp_val = tmp_val[:max_len]
+        else:
+            end_space = False
+            new_str = tmp_val[:max_len]
+            index = max_len-1
+
+            # find a space < max_len
+            while not end_space:
+                # index += -1
+                if new_str[index] in (' '):
+                    end_space = True
+                    length = index + 1
+                    row_to_append = new_str[:length].strip()
+                    print(row_to_append)
+                    new_lines.append(row_to_append)
+                    tmp_val = new_str[length:]
+                    print(tmp_val)
+
+                    # handle the remaining data not being too long
+                    if len(tmp_val) <= max_len:
+                        print('last line!')
+                        new_lines.append(tmp_val)
+                        too_long = False
+                index += -1
+            
+
+        # check if the new value to split is > max_len
+        if len(tmp_val) > max_len:
+            too_long = False
+
+    # return the formatted data    
+    print(len(new_lines))
+    print(new_lines)       
+    return "\n".join(new_lines)
+
+
+def dict_to_table(json_dict:dict, max_len:int=70):
+    table = []
+    # print(f"max length: {max_len}")
+    for key in json_dict:
+        # print(f"key: {key}")
+        value = json_dict[key]
+        # print(f"value (original): {value}")
+        # handle when the value is a dictionary, itself and isn't just a single item
+        # print(f"len(value): {len(value)}")
+        if isinstance(value, dict) and len(value) > 1:
+            value = "{...}"
+        # handle long value strings
+        elif len(value) > max_len:
+            value = split_lines(line=value, max_len=max_len)
+    
+        # print(f"value (new): {value}")
+        table.append([key, value])
+
+    return table
+
+
+@bot.command(name='info')
+async def info(context, *, info_req:to_lower=None):
+
+    # all printer object, with some filters
+    obj_api = 'printer/objects/list'
+    api_resp = await get_from_moonraker(context, obj_api)
+    objects = api_resp['result']['objects']
+    obj_list = []
+    omit_strings = ['gcode_macro', 'configfile', ]
+    for obj in objects:
+        skip = False
+        for omit in omit_strings:
+            if obj.startswith(omit):
+                skip = True
+        if not skip:
+            obj_list.append(obj)
+
+    # when no argument provided
+    if info_req is None:
+        msg = "The following printer objects can be queried:\n\n```"
+        for obj in obj_list:
+            msg += f"{obj}\n"
+        msg += "```\nto query these, type `!info <item>`"
+        await context.send(msg)
+
+    # some argument provided
+    else:
+        args = info_req.split()
+
+        #TODO: make a single API call, and disect the response?
+
+        headers = ['key', 'value']
+        for arg in args:
+            #TODO: handle path/to/thing
+            api_path = f'printer/objects/query?{arg}'
+            api_resp = await get_from_moonraker(context, api_path)
+            resp = dict_to_table(api_resp['result']['status'][arg])
+            resp_fmt = tabulate(resp, headers, tablefmt='fancy_grid')
+            print(resp_fmt)
+            # await context.send(f"```{resp_fmt}```")
+
+
+
+
+        # arg_lines = "\n".join(args)
+        # msg = f"you requested info about\n```{arg_lines}```"
+        # await context.send(msg)
 
 
 bot.run(DISCORD_TOKEN)
