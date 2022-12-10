@@ -13,7 +13,6 @@ PRINTER_HOST = os.getenv('PRINTER_HOST')
 CAM_PORT_MAIN = os.getenv('CAM_PORT_MAIN')
 CAM_PORT_ALT = os.getenv('CAM_PORT_ALT')
 MOONRAKER_API_PORT = os.getenv('MOONRAKER_API_PORT')
-# MOONRAKER_BOT_ID = os.getenv('MOONRAKER_BOT_ID')
 WEB_URL = os.getenv('WEB_URL')
 
 print(type(DISCORD_TOKEN))
@@ -25,14 +24,12 @@ bot = commands.Bot(command_prefix='!', intents=bot_intents)
 
 @bot.event
 async def on_ready():
-    # context.send(f'hu3bot is ready.  context type is {type(context)}')
     print(f'hu3bot is ready!')
     print(f'DISCORD_TOKEN: {DISCORD_TOKEN}')
     print(f'DISCORD_CHANNEL: {DISCORD_CHANNEL}')
     print(f'PRINTER_HOST: {PRINTER_HOST}')
     print(f'CAM_PORT_MAIN: {CAM_PORT_MAIN}')
     print(f'CAM_PORT_ALT: {CAM_PORT_ALT}')
-    # print(f'MOONRAKER_BOT_ID: {MOONRAKER_BOT_ID}')
 
 
 def capture_snapshot(cam='main'):
