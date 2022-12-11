@@ -1,5 +1,8 @@
 # test commands
-!test
 !help
+!help <command>
 !snapshot both
 !status detailed
+!info mcu
+!info mcu/mcu_constants
+!info z_calibration
