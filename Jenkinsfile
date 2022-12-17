@@ -34,12 +34,10 @@ node {
 
     // portainer webhook
     stage("Deploy") {
-            // sh 'http post ${PORTAINER_PRD_WEBHOOK}'
-            // sh 'http post ${PORTAINER_WEBHOOK_DEV_HU3BOT}'
+        // TODO: fix the issue of not being able to use the webhook credential
         httpRequest httpMode: 'POST',
-                    // url: 'PORTAINER_WEBHOOK_DEV_HU3BOT'
-                    url: 'PORTAINER_WEBHOOK_PRD_HU3BOT'
-                    // url: 'https://portainer.dev.drak3.io/api/stacks/webhooks/e7b3f207-7797-45e7-b26c-c926b19dcb1b'
+                    // url: 'PORTAINER_WEBHOOK_PRD_HU3BOT'
+                    url: 'https://portainer.drak3.io/api/stacks/webhooks/167564ee-cf7a-4221-abd1-3a28bda6db28'
     }
 
 }
