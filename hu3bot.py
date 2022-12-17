@@ -127,6 +127,11 @@ async def snapshot(context, *, cam:to_lower='main'):
     cam : str, optional
         which camera is used (main, alt, or both)
     """
+
+    # only respond on DISCORD_CHANNEL
+    if context.channel.name != DISCORD_CHANNEL:
+        return
+
     if cam in ['main', 'alt']:
         snapshot = capture_snapshot(cam)
         embed = discord.Embed()
@@ -156,7 +161,7 @@ async def snapshot(context, *, cam:to_lower='main'):
         await context.send(message)
 
 
-async def catch_moonraker_error(context, resp):
+def catch_moonraker_error(resp):
     """
     checks for a successful moonraker API call, and sends a message
     on failure, describing said failure.
@@ -177,14 +182,15 @@ async def catch_moonraker_error(context, resp):
         # await context.send('request is valid')
         return False
     else:
-        if isinstance(resp, requests.exceptions.Timeout):
-            await context.send(f'response is a timeout exception:\n```{resp}```')
-        if isinstance(resp, requests.exceptions.TooManyRedirects):
-            await context.send(f'response is a redirect exception:\n```{resp}```')
-        if isinstance(resp, requests.exceptions.RequestException):
-            await context.send(f'response is a request exception:\n```{resp}```')
-        else:
-            await context.send(f'respnse is something else:\n```{resp}```')
+        # TODO: fix the reason for these errors sending messages after success.
+        # if isinstance(resp, requests.exceptions.Timeout):
+        #     await context.send(f'response is a timeout exception:\n```{resp}```')
+        # if isinstance(resp, requests.exceptions.TooManyRedirects):
+        #     await context.send(f'response is a redirect exception:\n```{resp}```')
+        # if isinstance(resp, requests.exceptions.RequestException):
+        #     await context.send(f'response is a request exception:\n```{resp}```')
+        # else:
+        #     await context.send(f'respnse is something else:\n```{resp}```')
 
         return True
 
@@ -250,19 +256,26 @@ async def status(context, *, stus:to_lower=None):
         the type of status to return. can be missing or "detailed"
 
     """
+
+    # only respond on DISCORD_CHANNEL
+    if context.channel.name != DISCORD_CHANNEL:
+        return
+
     # https://moonraker.readthedocs.io/en/latest/web_api/#printer-status
     # basic print stats
 
     print_stats_api = 'printer/objects/query?print_stats'
     api_resp = get_from_moonraker(print_stats_api)
-    if await catch_moonraker_error(context=context, resp=api_resp):
+    # if await catch_moonraker_error(context=context, resp=api_resp):
+    if catch_moonraker_error(resp=api_resp):
         return
     print_stats = api_resp.json()['result']['status']['print_stats']
     state = print_stats['state']
 
     display_stats_api = 'printer/objects/query?display_status'
     api_resp = get_from_moonraker(display_stats_api)
-    if await catch_moonraker_error(context=context, resp=api_resp):
+    # if await catch_moonraker_error(context=context, resp=api_resp):
+    if catch_moonraker_error(resp=api_resp):
         return
     display_stats = api_resp.json()['result']['status']['display_status']
     progress = display_stats['progress']
@@ -430,11 +443,16 @@ async def info(context, *, info_req:to_lower=None):
         sections.
     """
 
+    # only respond on DISCORD_CHANNEL
+    if context.channel.name != DISCORD_CHANNEL:
+        return
+
     # *SETUP
     # all printer object, with some filters
     obj_api = 'printer/objects/list'
     api_resp = get_from_moonraker(api=obj_api)
-    if await catch_moonraker_error(context=context, resp=api_resp):
+    # if await catch_moonraker_error(context=context, resp=api_resp):
+    if catch_moonraker_error(resp=api_resp):
         return
     # disect the response
     objects = api_resp.json()['result']['objects']
@@ -467,7 +485,8 @@ async def info(context, *, info_req:to_lower=None):
         # for arg in args:
         api_path = f'printer/objects/query?{arg}'
         api_resp = get_from_moonraker(api=api_path)
-        if await catch_moonraker_error(context=context, resp=api_resp):
+        # if await catch_moonraker_error(context=context, resp=api_resp):
+        if catch_moonraker_error(resp=api_resp):
             return
 
         tmp_json_resp = api_resp.json()['result']['status'][arg]
@@ -496,11 +515,16 @@ async def history(context, *, details:to_lower=None):
         the sub-command. 
     """
 
+    # only respond on DISCORD_CHANNEL
+    if context.channel.name != DISCORD_CHANNEL:
+        return
+
     #*default: just some high-level history stats
     if details is None:
         job_hist = 'server/history/list?limit=10'
         api_resp = get_from_moonraker(job_hist)
-        if await catch_moonraker_error(context=context, resp=api_resp):
+        # if await catch_moonraker_error(context=context, resp=api_resp):
+        if catch_moonraker_error(resp=api_resp):
             return
         hist_stats = api_resp.json()['result']['jobs']
 
@@ -529,7 +553,8 @@ async def history(context, *, details:to_lower=None):
         else:
             totals_api = "server/history/totals"
             api_resp = get_from_moonraker(totals_api)
-            if await catch_moonraker_error(context=context, resp=api_resp):
+            # if await catch_moonraker_error(context=context, resp=api_resp):
+            if catch_moonraker_error(resp=api_resp):
                 return
             job_totals = api_resp.json()['result']['job_totals']
             filament_fmt = round(job_totals['total_filament_used'] / 1000)
